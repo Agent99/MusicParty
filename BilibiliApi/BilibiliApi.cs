@@ -139,6 +139,18 @@ public class BilibiliApi : IMusicApi
             .Select(x => new Music(x.bvid, x.title, new[] { x.upper.name }));
     }
 
+    public async Task<IEnumerable<PlayList>> GetMusicListByName(string name, int offset = 0)
+    {
+        var resp = await _http.GetStringAsync(
+            $"https://api.bilibili.com/x/v3/fav/folder/created/list-all?type=2&up_mid={name+offset}");
+        var j = JsonSerializer.Deserialize<UserFavsJson.RootObject>(resp);
+        if (j is null || j.code != 0)
+            throw new Exception($"Unable to get user playlist, message: ${resp}");
+        if (j.data?.list is null)
+            return Array.Empty<PlayList>();
+        return j.data.list.Select(x => new PlayList(x.id.ToString(), x.title));
+    }
+
     #region JsonClasses
 
     private class SearchUserJson

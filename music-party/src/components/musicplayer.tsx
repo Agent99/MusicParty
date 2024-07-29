@@ -14,6 +14,13 @@ import {
   Tooltip,
   useDisclosure,
   useToast,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  SliderMark,
+  Center,
+  Box
 } from "@chakra-ui/react";
 import { ArrowRightIcon } from "@chakra-ui/icons";
 import React, { useEffect, useRef, useState } from "react";
@@ -27,6 +34,7 @@ export const MusicPlayer = (props: {
   const audio = useRef<HTMLAudioElement>();
   const [length, setLength] = useState(100);
   const [time, setTime] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const t = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
@@ -39,11 +47,15 @@ export const MusicPlayer = (props: {
       audio.current.addEventListener("timeupdate", () => {
         setTime(audio.current!.currentTime);
       });
+    }else {
+      console.log("!audio.current===false");
+      audio.current?.play();
     }
     if (props.src === "") return;
     audio.current.src = props.src;
     if (props.playtime !== 0) audio.current.currentTime = props.playtime;
     audio.current.play().catch((e: DOMException) => {
+      console.log("e.message===",e.message);
       if (
         e.message ===
         "The play() request was interrupted because the media was removed from the document."
@@ -52,11 +64,14 @@ export const MusicPlayer = (props: {
       console.log(e);
       onOpen();
     });
+    audio.current.volume;
+    console.log("aaa==="+audio.current.volume);
   }, [props.src, props.playtime]);
 
   return (
     <>
       <Flex flexDirection={"row"} alignItems={"center"}>
+        
         <Progress flex={12} height={"32px"} max={length} value={time} />
         <Text flex={2} textAlign={"center"}>{`${Math.floor(
           time
@@ -76,9 +91,14 @@ export const MusicPlayer = (props: {
               </Icon>
             }
             onClick={() => {
-              audio.current?.play();
-              audio.current?.pause();
-              props.reset();
+              if (isPlaying) {
+                audio.current?.play();
+                setIsPlaying(false);
+              }else{
+                audio.current?.pause();
+                setIsPlaying(true);
+              }
+              //props.reset();
             }}
           />
         </Tooltip>
@@ -90,6 +110,24 @@ export const MusicPlayer = (props: {
             onClick={props.nextClick}
           />
         </Tooltip>
+
+      </Flex>
+      <Flex flexDirection={"row"} alignItems={"center"}>
+
+      <Center w='100px'>
+        <Text flex={2} textAlign={"center"}>音量调节:</Text>
+      </Center>
+      <Box flex='1'>
+        <Slider aria-label='slider-ex-1' w='30%' onChangeEnd={(val) => {
+          audio.current!.volume = val/100;
+          console.log(audio.current?.volume);
+        }} defaultValue={audio.current?.volume}>
+          <SliderTrack>
+            <SliderFilledTrack />
+          </SliderTrack>
+          <SliderThumb />
+        </Slider>
+      </Box>
       </Flex>
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay>

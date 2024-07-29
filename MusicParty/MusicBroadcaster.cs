@@ -46,7 +46,9 @@ public class MusicBroadcaster
                         try
                         {
                             var music = await ma!.GetPlayableMusicAsync(musicOrder.Music);
+
                             NowPlaying = (music, musicOrder.EnqueuerId);
+                            
                             if (music.NeedProxy)
                             {
                                 await MusicProxyMiddleware.StartProxyAsync(new MusicProxyRequest(music.TargetUrl!,

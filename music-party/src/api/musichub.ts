@@ -45,8 +45,11 @@ export class Connection {
       console.log("music hub: " + this._conn.state);
     }
   }
-  public async enqueueMusic(id: string, apiName: string): Promise<void> {
+  public async enqueueMusic(id: string, apiName: string): Promise<void> {   
     await this._conn.invoke("EnqueueMusic", id, apiName);
+  }
+  public async enqueueMusicByName(name: string, apiName: string): Promise<void> {   
+    await this._conn.invoke("EnqueueMusicByName", name, apiName);
   }
   public async requestSetNowPlaying(): Promise<void> {
     await this._conn.invoke("RequestSetNowPlaying");

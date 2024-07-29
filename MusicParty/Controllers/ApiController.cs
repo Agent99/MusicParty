@@ -88,6 +88,21 @@ public class ApiController : ControllerBase
         return Ok(musics);
     }
 
+
+    [HttpGet, Route("{apiName}/playlistbyname/{name}"), Authorize]
+    public async Task<IActionResult> PlaylistByName(string apiName, string name, [FromQuery] int page = 1)
+    {
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            return BadRequest($"Unknown api provider {apiName}.".BuildResponseMessageWithCode(1));
+        if (string.IsNullOrEmpty(name))
+            return BadRequest("Name cannot be null".BuildResponseMessageWithCode(3));
+        if (page <= 0)
+            return BadRequest("You need to set page with a number in N*.".BuildResponseMessageWithCode(4));
+        var playlists = await ma!.GetMusicListByName(name, (page - 1) * 10);
+        return Ok(playlists);
+
+    }
+
     [HttpPost, Route("setcredential/{apiName}")]
     public async Task<IActionResult> SetCred(string apiName, [FromBody] string? cred)
     {

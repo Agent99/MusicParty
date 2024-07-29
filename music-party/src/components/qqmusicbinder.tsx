@@ -25,7 +25,7 @@ export const QQMusicBinder = (props: {}) => {
 
   return (
     <>
-      <Button ref={btnRef} colorScheme='teal' onClick={onOpen}>
+      <Button ref={btnRef} bg="#16bb5d" color="white" onClick={onOpen}>
         绑定 QQ 音乐账号
       </Button>
       <Drawer

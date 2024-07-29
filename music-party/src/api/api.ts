@@ -48,6 +48,19 @@ export async function getMusicsByPlaylist(
   return j;
 }
 
+
+
+export async function getMusicsByName(
+  name: string,
+  page: number,
+  apiName: string
+): Promise<Music[]> {
+  const resp = await fetch(`/api/${apiName}/playlistbyname/${name}?page=${page}`);
+  const j = await resp.json();
+  return j;
+}
+
+
 export interface User {
   name: string;
 }

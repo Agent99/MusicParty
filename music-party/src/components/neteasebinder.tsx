@@ -29,7 +29,7 @@ export const NeteaseBinder = (props: {}) => {
 
   return (
     <>
-      <Button ref={btnRef} colorScheme='pink' onClick={onOpen}>
+      <Button ref={btnRef} bg="#e70013" color="white" onClick={onOpen}>
         绑定网易云音乐账号
       </Button>
       <Drawer

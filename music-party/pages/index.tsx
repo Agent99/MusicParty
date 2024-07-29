@@ -31,6 +31,7 @@ import {
   Portal,
   UnorderedList,
   Flex,
+
   Highlight,
   Box,
 } from '@chakra-ui/react';
@@ -40,9 +41,11 @@ import { NeteaseBinder } from '../src/components/neteasebinder';
 import { MyPlaylist } from '../src/components/myplaylist';
 import { toastEnqueueOk, toastError, toastInfo } from '../src/utils/toast';
 import { MusicSelector } from '../src/components/musicselector';
+import { MusicSelectorByName } from '../src/components/musicselectorByName';
 import { QQMusicBinder } from '../src/components/qqmusicbinder';
 import { MusicQueue } from '../src/components/musicqueue';
 import { BilibiliBinder } from '../src/components/bilibilibinder';
+import { SongListByName } from '../src/components/songListByName';
 
 export default function Home() {
   const [src, setSrc] = useState('');
@@ -66,6 +69,8 @@ export default function Home() {
   const t = useToast();
 
   const conn = useRef<Connection>();
+
+  const currentVoice = 0;
   useEffect(() => {
     if (!conn.current) {
       conn.current = new Connection(
@@ -147,14 +152,18 @@ export default function Home() {
       getMusicApis().then((as) => setApis(as));
 
       setInited(true);
+
+
+      
+
     }
   }, []);
 
   return (
     <Grid templateAreas={`"nav main"`} gridTemplateColumns={'2fr 5fr'} gap='1'>
       <Head>
-        <title>🎵 音趴 🎵</title>
-        <meta name='description' content='享受音趴！' />
+        <title>🎵 山东油盐社广播音乐台FM 🎵</title>
+        <meta name='description' content='享受音趴，凑合用吧！' />
         <link rel='icon' href='/favicon.ico' />
         <meta name='referrer' content='never' />
       </Head>
@@ -268,6 +277,8 @@ export default function Home() {
           <TabList>
             <Tab>播放列表</Tab>
             <Tab>从音乐ID点歌</Tab>
+            <Tab>从音乐名称点歌</Tab>
+            <Tab>从音乐名称点歌New</Tab>
             <Tab>从歌单点歌</Tab>
           </TabList>
           <TabPanels>
@@ -291,6 +302,7 @@ export default function Home() {
                 src={src}
                 playtime={playtime}
                 nextClick={() => {
+                  
                   conn.current?.nextSong();
                 }}
                 reset={() => {
@@ -311,6 +323,24 @@ export default function Home() {
             </TabPanel>
             <TabPanel>
               <MusicSelector apis={apis} conn={conn.current!} />
+            </TabPanel>
+            <TabPanel>
+              <MusicSelectorByName apis={apis} conn={conn.current!} />
+            </TabPanel>
+            <TabPanel>
+              <SongListByName 
+              apis={apis} 
+              conn={conn.current!}
+              enqueue={(id, apiName) => {
+                conn
+                  .current!.enqueueMusic(id, apiName)
+                  .then(() => {
+                    toastEnqueueOk(t);
+                  })
+                  .catch(() => {
+                    toastError(t, `音乐 {id: ${id}} 加入队列失败`);
+                  });
+              }}  />
             </TabPanel>
             <TabPanel>
               {!inited ? (

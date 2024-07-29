@@ -10,4 +10,5 @@ public interface IMusicApi
     Task<IEnumerable<MusicServiceUser>> SearchUserAsync(string keyword);
     Task<IEnumerable<PlayList>> GetUserPlayListAsync(string userIdentifier);
     Task<IEnumerable<Music>> GetMusicsByPlaylistAsync(string id, int offset = 0);
+    Task<IEnumerable<PlayList>> GetMusicListByName(string name, int offset = 0);
 }

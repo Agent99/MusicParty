@@ -78,7 +78,47 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         }
         catch (Exception ex)
         {
+            Console.WriteLine("Failed to enqueue music, id: {id}", ex);
             throw new HubException($"Failed to enqueue music, id: {id}", ex);
+        }
+    }
+
+    public async Task EnqueueMusicByName(string name, string apiName)
+    {
+        if (!_musicApis.TryGetMusicApi(apiName, out var ma))
+            throw new HubException($"Unknown api provider {apiName}.");
+        try
+        {
+            var musicList = await ma!.SearchMusicByNameAsync(name);
+
+            //Console.WriteLine("musicList", musicList);
+            Console.WriteLine("musicList.Count()"+musicList.Count());
+            Random rd=new Random();
+            int listCount = musicList.Count()-1;
+            int radomCount = 3;
+            if(listCount < 3){
+                radomCount = listCount;
+            }
+            int k=rd.Next(1,radomCount);
+            Console.WriteLine("k"+k);
+                        
+            IEnumerator<Music> musicEnumerator = musicList.GetEnumerator(); 
+            // for (int a = 0; a < k; a = a + 1)
+            //     {
+                    musicEnumerator.MoveNext();
+                // }
+            var music = musicEnumerator.Current;
+            Console.WriteLine("music"+music);
+            Console.WriteLine("music.Id"+music.Id);
+            var currentMusic = await ma!.GetMusicByIdAsync(music.Id);
+
+            Console.WriteLine("currentMusic"+currentMusic);
+            await _musicBroadcaster.EnqueueMusic(currentMusic, apiName, Context.User!.Identity!.Name!);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Failed to enqueue music, name: {name}", ex);
+            throw new HubException($"Failed to enqueue music, name: {name}", ex);
         }
     }
 
@@ -86,6 +126,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     {
         if (_musicBroadcaster.NowPlaying is null) return;
         var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
+        Console.WriteLine("start===SetNowPlaying", music);
         await SetNowPlaying(Clients.Caller, music, _userManager.FindUserById(enqueuerId)!.Name,
             (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
     }
@@ -100,7 +141,8 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
 
     public async Task NextSong()
     {
-        await _musicBroadcaster.NextSong(Context.User!.Identity!.Name!);
+
+         await _musicBroadcaster.NextSong(Context.User!.Identity!.Name!);
     }
 
     public async Task TopSong(string actionId)

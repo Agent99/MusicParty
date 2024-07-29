@@ -62,7 +62,21 @@ public class QQMusicApi : IMusicApi
 
     public async Task<IEnumerable<Music>> SearchMusicByNameAsync(string name)
     {
-        throw new NotImplementedException();
+       var resp1 = await _http.GetStringAsync(_url + $"/search?key={name}");
+
+        Console.WriteLine($"GetMusicListByName  resp1: {resp1}");
+
+        var j1 = JsonNode.Parse(resp1)!;
+        if (j1["result"]!.GetValue<int>() != 100)
+            throw new Exception($"Unable to get user playlist, message: ${resp1}");
+        var musics = j1["data"]!["list"]!.AsArray()
+            .Select(x =>
+            {
+                var artists = x!["singer"]!.AsArray().Select(y => y!["name"]!.GetValue<string>()).ToArray();
+                return new Music(x["songmid"]!.GetValue<string>() + ',' + x["strMediaMid"]!.GetValue<string>(),
+                    x["songname"]!.GetValue<string>(), artists);
+            });
+        return musics;
     }
 
     public async Task<PlayableMusic> GetPlayableMusicAsync(Music music)
@@ -70,6 +84,9 @@ public class QQMusicApi : IMusicApi
         var ids = music.Id.Split(',');
         var resp1 = await _http.GetStringAsync(_url + $"/song?songmid={ids[0]}");
         var j1 = JsonNode.Parse(resp1)!;
+
+        Console.WriteLine("GetPlayableMusicAsync.j1" + j1);
+
         if (j1["result"]!.GetValue<int>() != 100)
             throw new Exception($"Unable to get playable music, message: {resp1}");
         var length = j1["data"]!["track_info"]!["interval"]!.GetValue<int>() * 1000;
@@ -99,22 +116,35 @@ public class QQMusicApi : IMusicApi
     public async Task<IEnumerable<PlayList>> GetUserPlayListAsync(string userIdentifier)
     {
         var resp1 = await _http.GetStringAsync(_url + $"/user/songlist?id={userIdentifier}");
-        var j1 = JsonNode.Parse(resp1)!;
-        if (j1["result"]!.GetValue<int>() != 100)
+        Console.WriteLine($"Response 1: {resp1}");
+        var j1 = JsonNode.Parse(resp1);
+        if (j1?["result"]?.GetValue<int>() != 100)
             throw new Exception($"Unable to get user playlist, message: ${resp1}");
-        var playlists1 = j1["data"]!["list"]!.AsArray()
+
+        var playlists1 = j1["data"]?["list"]?.AsArray()
             .Select(x => new PlayList(
-                x!["tid"]!.GetValue<long>().ToString(),
-                x!["diss_name"]!.GetValue<string>())).Where(x => x.Id != "0");
+                x?["tid"]?.GetValue<long>().ToString() ?? string.Empty,
+                x?["diss_name"]?.GetValue<string>() ?? string.Empty))
+            .Where(x => !string.IsNullOrEmpty(x.Id) && x.Id != "0")
+            ?? Enumerable.Empty<PlayList>();
 
         var resp2 = await _http.GetStringAsync(_url + $"/user/collect/songlist?id={userIdentifier}");
-        var j2 = JsonNode.Parse(resp2)!;
-        if (j2["result"]!.GetValue<int>() != 100)
+        Console.WriteLine($"Response 2: {resp2}");
+
+        var j2 = JsonNode.Parse(resp2);
+        if (j2?["result"]?.GetValue<int>() != 100)
             throw new Exception($"Unable to get user collected playlist, message: ${resp2}");
-        var playlists2 = j2["data"]!["list"]!.AsArray()
+
+        var playlists2 = j2["data"]?["list"]?.AsArray()
             .Select(x => new PlayList(
-                x!["dissid"]!.GetValue<long>().ToString(),
-                x!["dissname"]!.GetValue<string>()));
+                x?["dissid"]?.GetValue<long>().ToString() ?? string.Empty,
+                x?["dissname"]?.GetValue<string>() ?? string.Empty))
+            ?? Enumerable.Empty<PlayList>();
+
+
+        var resp3 = await _http.GetStringAsync(_url + $"/user/detail?id={userIdentifier}");
+        Console.WriteLine($"Response 3: {resp3}");
+
 
         return playlists1.Concat(playlists2);
     }
@@ -133,5 +163,30 @@ public class QQMusicApi : IMusicApi
                     x["songorig"]!.GetValue<string>(), artists);
             });
         return musics.Skip(offset).Take(10);
+    }
+
+     public async Task<IEnumerable<PlayList>> GetMusicListByName(string name, int offset = 0)
+    {
+        var resp1 = await _http.GetStringAsync(_url + $"/search?key={name}");
+
+        Console.WriteLine($"GetMusicListByName  resp1: {resp1}");
+
+        var j1 = JsonNode.Parse(resp1)!;
+        if (j1["result"]!.GetValue<int>() != 100)
+            throw new Exception($"Unable to get user playlist, message: ${resp1}");
+        var playlists1 = j1["data"]!["list"]!.AsArray()
+            .Select(x => {
+            var songId = x?["songmid"]?.GetValue<string>() ?? string.Empty;
+            var strMediaMid = x?["strMediaMid"]?.GetValue<string>() ?? string.Empty;
+            var songName = x?["songname"]?.GetValue<string>() ?? string.Empty;
+            var singerName = x?["singer"]?.AsArray()?.FirstOrDefault()?["name"]?.GetValue<string>() ?? string.Empty;
+            var combinedName = $"{songName} - {singerName}";
+            return new PlayList(
+                songId + ',' + strMediaMid,
+                combinedName
+            );
+        }) ?? Enumerable.Empty<PlayList>();
+
+        return playlists1;
     }
 }
