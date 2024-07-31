@@ -23,7 +23,12 @@ export class Connection {
     globalMessage: (content: string) => void,
     abort: (msg: string) => void
   ) {
-    this._conn = new sr.HubConnectionBuilder().withUrl(url).build();
+
+    this._conn = new sr.HubConnectionBuilder()
+      .withUrl(url)
+      .withAutomaticReconnect() // 添加自动重连
+      .build();
+
     this._conn.on("SetNowPlaying", setNowPlaying);
     this._conn.on("MusicEnqueued", musicEnqueued);
     this._conn.on("MusicDequeued", musicDequeued);
@@ -38,6 +43,16 @@ export class Connection {
     this._conn.onclose((e) => {
       alert(`您已断开连接，请刷新页面重连\n错误信息：${e}`);
     });
+
+    // 自动重连事件处理
+    this._conn.onreconnecting((e) => {
+      console.log(`正在尝试重连，错误信息：${e}`);
+    });
+
+    this._conn.onreconnected((connectionId) => {
+      console.log(`重连成功，连接ID：${connectionId}`);
+    });
+    
   }
   public async start(): Promise<any> {
     if (this._conn.state === sr.HubConnectionState.Disconnected) {
