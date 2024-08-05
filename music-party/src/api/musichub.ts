@@ -15,6 +15,7 @@ export class Connection {
     ) => void,
     musicDequeued: () => void,
     musicTopped: (actionId: string, operatorName: string) => void,
+    MusicDel: (actionId: string, operatorName: string) => void,
     musicCut: (operatorName: string, music: Music) => void,
     onlineUserLogin: (id: string, name: string) => void,
     onlineUserLogout: (id: string) => void,
@@ -33,6 +34,7 @@ export class Connection {
     this._conn.on("MusicEnqueued", musicEnqueued);
     this._conn.on("MusicDequeued", musicDequeued);
     this._conn.on("MusicTopped", musicTopped);
+    this._conn.on("MusicDel", MusicDel);
     this._conn.on("MusicCut", musicCut);
     this._conn.on("OnlineUserLogin", onlineUserLogin);
     this._conn.on("OnlineUserLogout", onlineUserLogout);
@@ -77,6 +79,9 @@ export class Connection {
   }
   public async topSong(actionId: string): Promise<void> {
     await this._conn.invoke("TopSong", actionId);
+  }
+  public async delSong(actionId: string): Promise<void> {
+    await this._conn.invoke("DelSong", actionId);
   }
   public async rename(newName: string): Promise<void> {
     await this._conn.invoke("Rename", newName);

@@ -109,6 +109,15 @@ public class MusicBroadcaster
         await MusicTopped(actionId, _userManager.FindUserById(operatorId)!.Name);
     }
 
+     public async Task DelSong(string actionId, string operatorId)
+    {
+        bool isSuccess = MusicQueue.RemoveByPredicate(x => x.ActionId == actionId);
+        if (isSuccess)
+        {
+            await MusicDel(actionId, _userManager.FindUserById(operatorId)!.Name);
+        }
+    }
+
     private async Task SetNowPlaying(PlayableMusic music, string enqueuerName)
     {
         await _context.Clients.All.SendAsync(nameof(SetNowPlaying), music, enqueuerName,
@@ -128,6 +137,11 @@ public class MusicBroadcaster
     private async Task MusicTopped(string actionId, string operatorName)
     {
         await _context.Clients.All.SendAsync(nameof(MusicTopped), actionId, operatorName);
+    }
+
+    private async Task MusicDel(string actionId, string operatorName)
+    {
+        await _context.Clients.All.SendAsync(nameof(MusicDel), actionId, operatorName);
     }
 
     private async Task MusicCut(string operatorId, Music music)
@@ -172,5 +186,22 @@ public class MusicBroadcaster
                 return true;
             }
         }
+
+        // New method to remove an item by a predicate
+        public bool RemoveByPredicate(Func<T, bool> predicate)
+        {
+            var current = First;
+            while (current != null)
+            {
+                if (predicate(current.Value))
+                {
+                    Remove(current);
+                    return true; // Return true if an item was removed
+                }
+                current = current.Next;
+            }
+            return true; // Return false if no item was removed
+        }
+        
     }
 }

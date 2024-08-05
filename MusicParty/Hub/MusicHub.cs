@@ -150,6 +150,11 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
         await _musicBroadcaster.TopSong(actionId, Context.User!.Identity!.Name!);
     }
 
+    public async Task DelSong(string actionId)
+    {
+        await _musicBroadcaster.DelSong(actionId, Context.User!.Identity!.Name!);
+    }
+
     public async Task Rename(string newName)
     {
         _userManager.RenameUserById(Context.User!.Identity!.Name!, newName);

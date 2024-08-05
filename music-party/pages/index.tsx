@@ -69,8 +69,29 @@ export default function Home() {
   const t = useToast();
 
   const conn = useRef<Connection>();
+  const chatContentRef = useRef<HTMLUListElement>(null); // 指定类型为 HTMLUListElement
 
-  const currentVoice = 0;
+  const [colors, setColors] = useState<{ [key: number]: string }>({});
+
+  const getRandomColor = () => {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+      color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+  };
+
+  // 使用一个对象来存储颜色，key为随机生成的值
+  const getColorForMessage = (key: number) => {
+    if (!colors[key]) {
+      const newColor = getRandomColor();
+      setColors((prevColors) => ({ ...prevColors, [key]: newColor }));
+      return newColor;
+    }
+    return colors[key];
+  };
+
   useEffect(() => {
     if (!conn.current) {
       conn.current = new Connection(
@@ -95,6 +116,21 @@ export default function Home() {
               `歌曲 "${target.music.name}-${target.music.artists}" 被 ${operatorName} 置顶了`
             );
             return [target].concat(q.filter((x) => x.actionId !== actionId));
+          });
+        },
+        async (actionId: string, operatorName: string) => {
+          setQueue((q) => {
+            // 查找目标歌曲
+            const target = q.find((x) => x.actionId === actionId)!;
+        
+            // 显示删除通知
+            toastInfo(
+              t,
+              `歌曲 "${target.music.name}-${target.music.artists}" 被 ${operatorName} 删除了`
+            );
+        
+            // 返回一个新的队列，过滤掉被删除的歌曲
+            return q.filter((x) => x.actionId !== actionId);
           });
         },
         async (operatorName: string, _) => {
@@ -158,6 +194,14 @@ export default function Home() {
 
     }
   }, []);
+
+  useEffect(() => {
+    // 每次聊天内容更新后，滚动到最下方
+    if (chatContentRef.current) {
+      chatContentRef.current.scrollTop = chatContentRef.current.scrollHeight;
+    }
+  }, [chatContent]); // 依赖于 chatContent，当其变化时执行
+
 
   return (
     <Grid templateAreas={`"nav main"`} gridTemplateColumns={'2fr 5fr'} gap='1'>
@@ -260,9 +304,9 @@ export default function Home() {
                   发送
                 </Button>
               </Flex>
-              <UnorderedList>
-                {chatContent.map((s) => (
-                  <ListItem key={Math.random() * 1000}>
+              <UnorderedList ref={chatContentRef}  style={{ maxHeight: '300px', overflowY: 'auto', width: '240px'  }} >
+                {chatContent.map((s, index) => (
+                  <ListItem key={index} style={{ color: getColorForMessage(index) }}>
                     {`${s.name}: ${s.content}`}
                   </ListItem>
                 ))}
@@ -319,6 +363,11 @@ export default function Home() {
                 top={(actionId) => {
                   conn.current!.topSong(actionId);
                 }}
+                delete={(actionId) => {
+                  conn.current!.delSong(actionId);
+                }
+
+                }
               />
             </TabPanel>
             <TabPanel>

@@ -1,4 +1,4 @@
-import { TriangleUpIcon } from '@chakra-ui/icons';
+import { TriangleUpIcon, CloseIcon } from '@chakra-ui/icons';
 import {
   Text,
   Card,
@@ -18,6 +18,7 @@ import { MusicOrderAction } from '../api/musichub';
 export const MusicQueue = (props: {
   queue: MusicOrderAction[];
   top: (actionId: string) => void;
+  delete: (actionId: string) => void;
 }) => {
   return (
     <Card mt={4}>
@@ -38,13 +39,23 @@ export const MusicQueue = (props: {
                   </Box>
                   {props.queue.findIndex((x) => x.actionId === v.actionId) !==
                     0 && (
-                    <Tooltip hasArrow label={'将此歌曲至于队列顶端'}>
-                      <IconButton
-                        onClick={() => props.top(v.actionId)}
-                        aria-label={'置顶'}
-                        icon={<TriangleUpIcon />}
-                      />
-                    </Tooltip>
+                      <>
+                      <Tooltip hasArrow label={'将此歌曲至于队列顶端'}>
+                        <IconButton
+                          onClick={() => props.top(v.actionId)}
+                          aria-label={'置顶'}
+                          icon={<TriangleUpIcon />}
+                        />
+                      </Tooltip>
+                      <Tooltip hasArrow label={'删除此歌曲'}>
+                        <IconButton
+                          onClick={() => props.delete(v.actionId)}
+                          aria-label={'删除'}
+                          icon={<CloseIcon />}
+                          ml={2} // 添加一点左边距，使按钮之间有空隙
+                        />
+                      </Tooltip>
+                    </>
                   )}
                 </Flex>
               </ListItem>
