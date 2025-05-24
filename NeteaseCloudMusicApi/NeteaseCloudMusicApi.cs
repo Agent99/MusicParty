@@ -56,7 +56,9 @@ public class NeteaseCloudMusicApi : IMusicApi
                         throw new LoginException(
                             "The phone number or password of your Netease Cloud Music Account is null, please set it in appsettings.json");
                     }
-                    cookie = PhoneNumberLogin(_phoneNo,_password);
+                    // cookie = PhoneNumberLogin(_phoneNo,_password);
+                    var cookies = QRCodeLogin(_url);
+                    cookie = string.Join(';', cookies);
                     _http.DefaultRequestHeaders.Add("Cookie", cookie);
                 }
             }
@@ -64,9 +66,6 @@ public class NeteaseCloudMusicApi : IMusicApi
             {
                 throw new LoginException("Login failed.", ex);
             }
-
-            Console.WriteLine("cookie=="+cookie);
-
             File.WriteAllText("cookie.txt", cookie);
         }
 
@@ -161,10 +160,7 @@ public class NeteaseCloudMusicApi : IMusicApi
         _http.DefaultRequestHeaders.Remove("Cookie");
         _http.DefaultRequestHeaders.Add("Cookie", File.ReadAllText("cookie.txt"));
         Console.WriteLine("cookie==="+File.ReadAllText("cookie.txt"));
-
-        Console.WriteLine("url==="+ _url + $"/song/url?id={music.Id}&cookie={GetCookieEncoded()}");
-
-        var resp = await _http.GetStringAsync(_url + $"/song/url?id={music.Id}");
+        var resp = await _http.GetStringAsync(_url + $"/song/url?id={music.Id}&cookie={GetCookieEncoded()}");
         var j = JsonNode.Parse(resp)!;
         Console.WriteLine("resp===j"+j);
         if ((int)j["code"]! != 200)
