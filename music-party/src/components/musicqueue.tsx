@@ -1,4 +1,4 @@
-import { TriangleUpIcon, CloseIcon } from '@chakra-ui/icons';
+import { TriangleUpIcon, DeleteIcon  } from '@chakra-ui/icons';
 import {
   Text,
   Card,
@@ -12,6 +12,8 @@ import {
   Flex,
   Tooltip,
   IconButton,
+  HStack,
+  Switch
 } from '@chakra-ui/react';
 import { MusicOrderAction } from '../api/musichub';
 
@@ -19,11 +21,24 @@ export const MusicQueue = (props: {
   queue: MusicOrderAction[];
   top: (actionId: string) => void;
   delete: (actionId: string) => void;
+  loopMode: boolean;
+  toggleLoopMode: (checked: boolean) => void;
 }) => {
   return (
     <Card mt={4}>
       <CardHeader>
-        <Heading size={'lg'}>播放队列</Heading>
+      <Flex justifyContent="space-between" alignItems="center" width="full">
+          <Heading size={'lg'}>播放队列</Heading>
+          <HStack spacing={2}>
+            <Text fontSize="sm" color="gray.500">循环模式</Text>
+            <Switch 
+              colorScheme="blue"
+              size="md"
+              isChecked={props.loopMode}
+              onChange={(e: any) => props.toggleLoopMode(e.target.checked)}
+            />
+          </HStack>
+        </Flex>
       </CardHeader>
       <CardBody>
         <OrderedList>
@@ -37,26 +52,42 @@ export const MusicQueue = (props: {
                       由 {v.enqueuerName} 点歌
                     </Text>
                   </Box>
-                  {props.queue.findIndex((x) => x.actionId === v.actionId) !==
-                    0 && (
-                      <>
-                      <Tooltip hasArrow label={'将此歌曲至于队列顶端'}>
+                  <HStack spacing={2} ml={4}>
+                    {props.queue.findIndex((x) => x.actionId === v.actionId) !== 0 && (
+                      <Tooltip hasArrow label={'将此歌曲置于队列顶端'}>
                         <IconButton
                           onClick={() => props.top(v.actionId)}
                           aria-label={'置顶'}
                           icon={<TriangleUpIcon />}
+                          size="sm"
+                          variant="outline"
+                          colorScheme="blue"
+                          _hover={{
+                            bg: 'blue.50',
+                            borderColor: 'blue.300',
+                            transform: 'translateY(-1px)',
+                          }}
+                          transition="all 0.2s"
                         />
                       </Tooltip>
-                      <Tooltip hasArrow label={'删除此歌曲'}>
-                        <IconButton
-                          onClick={() => props.delete(v.actionId)}
-                          aria-label={'删除'}
-                          icon={<CloseIcon />}
-                          ml={2} // 添加一点左边距，使按钮之间有空隙
-                        />
-                      </Tooltip>
-                    </>
-                  )}
+                    )}
+                    <Tooltip hasArrow label={'删除此歌曲'}>
+                      <IconButton
+                        icon={<DeleteIcon />}
+                        aria-label="删除"
+                        onClick={() => props.delete(v.actionId)}
+                        size="sm"
+                        variant="outline"
+                        colorScheme="red"
+                        _hover={{
+                          bg: 'red.50',
+                          borderColor: 'red.300',
+                          transform: 'translateY(-1px)',
+                        }}
+                        transition="all 0.2s"
+                      />
+                    </Tooltip>
+                  </HStack>
                 </Flex>
               </ListItem>
             ))

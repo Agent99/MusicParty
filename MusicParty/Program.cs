@@ -23,8 +23,7 @@ if (bool.Parse(builder.Configuration["MusicApi:NeteaseCloudMusic:Enabled"]))
     var api = new NeteaseCloudMusicApi(
         builder.Configuration["MusicApi:NeteaseCloudMusic:ApiServerUrl"],
         builder.Configuration["MusicApi:NeteaseCloudMusic:PhoneNo"],
-        builder.Configuration["MusicApi:NeteaseCloudMusic:Cookie"],
-        builder.Configuration["MusicApi:NeteaseCloudMusic:Password"]
+        builder.Configuration["MusicApi:NeteaseCloudMusic:Cookie"]
     );
     api.Login();
     musicApiList.Add(api);

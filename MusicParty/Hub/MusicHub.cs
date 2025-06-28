@@ -47,7 +47,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
 
         if (_musicBroadcaster.NowPlaying is not null)
         {
-            var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
+            var (music, service, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
             await SetNowPlaying(Clients.Caller, music, _userManager.FindUserById(enqueuerId)!.Name,
                 (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
         }
@@ -125,7 +125,7 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     public async Task RequestSetNowPlaying()
     {
         if (_musicBroadcaster.NowPlaying is null) return;
-        var (music, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
+        var (music, service, enqueuerId) = _musicBroadcaster.NowPlaying.Value;
         Console.WriteLine("start===SetNowPlaying", music);
         await SetNowPlaying(Clients.Caller, music, _userManager.FindUserById(enqueuerId)!.Name,
             (int)(DateTime.Now - _musicBroadcaster.NowPlayingStartedTime).TotalSeconds);
@@ -201,5 +201,28 @@ public class MusicHub : Microsoft.AspNetCore.SignalR.Hub
     private async Task NewChat(IClientProxy target, string name, string content)
     {
         await target.SendAsync(nameof(NewChat), name, content);
+    }
+    
+    public async Task setLoopMode(bool content)
+    {
+        await _musicBroadcaster.SetLoopMode(content);
+    }
+
+    public async Task RequestLoopModeStatus()
+    {
+        await Clients.Caller.SendAsync("ReceiveLoopModeStatus", _musicBroadcaster._loopMode);
+    }
+
+    public async Task DeleteSong(string actionId)
+    {
+        var musicName = _musicBroadcaster.GetMusicName(actionId);
+        if (!string.IsNullOrEmpty(musicName))
+        {
+            _musicBroadcaster.DeleteSong(actionId);
+            await Clients.All.SendAsync("MusicDeleted", 
+                actionId, 
+                _userManager.FindUserById(Context.User!.Identity!.Name!)!.Name,
+                musicName);
+        }
     }
 }

@@ -110,9 +110,8 @@ export const SongListByName = (props: { apis: string[]; conn: Connection; enqueu
               <Accordion allowMultiple>
                 {musics.map((music: api.Music) => (
                   <SongList
-                    key={music.id}
                     id={music.id}
-                    name={`${music.name} - ${music.artists.join(', ')}`}
+                    name={music.name}
                     apiName={apiName}
                     enqueue={props.enqueue}
                   />

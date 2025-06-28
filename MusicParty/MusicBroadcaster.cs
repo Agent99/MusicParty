@@ -6,13 +6,16 @@ namespace MusicParty;
 
 public class MusicBroadcaster
 {
-    public (PlayableMusic music, string enqueuerId)? NowPlaying { get; private set; }
+    public (PlayableMusic music, string service, string enqueuerId)? NowPlaying { get; private set; }
     private ToppableQueue<MusicOrderAction> MusicQueue { get; } = new();
     public DateTime NowPlayingStartedTime { get; private set; }
     private readonly IEnumerable<IMusicApi> _apis;
     private readonly IHubContext<MusicHub> _context;
     private readonly UserManager _userManager;
     private readonly ILogger<MusicBroadcaster> _logger;
+
+    // 新增循环模式字段
+    public bool _loopMode = true;
 
     public MusicBroadcaster(IEnumerable<IMusicApi> apis, IHubContext<MusicHub> context, UserManager userManager,
         ILogger<MusicBroadcaster> logger)
@@ -47,7 +50,7 @@ public class MusicBroadcaster
                         {
                             var music = await ma!.GetPlayableMusicAsync(musicOrder.Music);
 
-                            NowPlaying = (music, musicOrder.EnqueuerId);
+                            NowPlaying = (music, musicOrder.Service, musicOrder.EnqueuerId);
                             
                             if (music.NeedProxy)
                             {
@@ -76,10 +79,18 @@ public class MusicBroadcaster
             }
             else
             {
-                if ((DateTime.Now - NowPlayingStartedTime).TotalMilliseconds >=
-                    NowPlaying.Value.music.Length) // play is over
+               // 检查当前歌曲是否播放完毕
+                if ((DateTime.Now - NowPlayingStartedTime).TotalMilliseconds >= NowPlaying.Value.music.Length)
                 {
-                    NowPlaying = null;
+                    // 新增循环播放逻辑
+                    if (_loopMode)  // 需要先声明循环模式字段
+                    {
+                        // 将当前歌曲重新加入队列
+                        var current = NowPlaying.Value;
+                        await EnqueueMusic(current.music, current.service, current.enqueuerId);
+                    }
+                    
+                    NowPlaying = null; // 强制结束当前播放
                 }
             }
 
@@ -98,9 +109,16 @@ public class MusicBroadcaster
 
     public async Task NextSong(string operatorId)
     {
-        if (NowPlaying is null) return;
+         if (NowPlaying is null) return;
+        // 新增循环播放逻辑
+        if (_loopMode)  // 需要先声明循环模式字段
+        {
+            // 将当前歌曲重新加入队列
+            var current = NowPlaying.Value;
+            await EnqueueMusic(current.music, current.service, current.enqueuerId);
+        }
         await MusicCut(operatorId, NowPlaying.Value.music);
-        NowPlaying = null;
+        NowPlaying = null; // 强制结束当前播放
     }
 
     public async Task TopSong(string actionId, string operatorId)
@@ -200,8 +218,37 @@ public class MusicBroadcaster
                 }
                 current = current.Next;
             }
-            return true; // Return false if no item was removed
+            return false; // Return false if no item was removed
         }
         
+    }
+
+    public void DeleteSong(string actionId)
+    {
+        lock (MusicQueue)
+        {
+            // 从队列中移除指定actionId的歌曲
+            var itemToRemove = MusicQueue.FirstOrDefault(x => x.ActionId == actionId);
+            if (itemToRemove != null)
+            {
+                MusicQueue.Remove(itemToRemove);
+                _logger.LogInformation($"歌曲 {itemToRemove.Music.Name} 已被删除");
+            }
+        }
+    }
+
+    public async Task SetLoopMode(bool content)
+    {
+        _loopMode = content;
+        await _context.Clients.All.SendAsync(nameof(SetLoopMode), content);
+        
+        // 新增：当模式改变时通知所有客户端
+        await _context.Clients.All.SendAsync("ReceiveLoopModeStatus", _loopMode);
+    }
+    
+    public string GetMusicName(string actionId)
+    {
+        var item = MusicQueue.FirstOrDefault(x => x.ActionId == actionId);
+        return item?.Music.Name ?? string.Empty;
     }
 }
