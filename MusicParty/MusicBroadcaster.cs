@@ -82,11 +82,11 @@ public class MusicBroadcaster
                // 检查当前歌曲是否播放完毕
                 if ((DateTime.Now - NowPlayingStartedTime).TotalMilliseconds >= NowPlaying.Value.music.Length)
                 {
-                    // 新增循环播放逻辑
-                    if (_loopMode)  // 需要先声明循环模式字段
+                    var current = NowPlaying.Value;
+                    
+                    // 循环播放逻辑：只有在队列为空且开启循环模式时，才将当前歌曲重新加入队列
+                    if (_loopMode && MusicQueue.Count == 0)
                     {
-                        // 将当前歌曲重新加入队列
-                        var current = NowPlaying.Value;
                         await EnqueueMusic(current.music, current.service, current.enqueuerId);
                     }
                     
@@ -109,15 +109,17 @@ public class MusicBroadcaster
 
     public async Task NextSong(string operatorId)
     {
-         if (NowPlaying is null) return;
-        // 新增循环播放逻辑
-        if (_loopMode)  // 需要先声明循环模式字段
+        if (NowPlaying is null) return;
+        
+        var current = NowPlaying.Value;
+        
+        // 手动切歌时的循环逻辑：只有在队列为空且开启循环模式时，才将当前歌曲重新加入队列
+        if (_loopMode && MusicQueue.Count == 0)
         {
-            // 将当前歌曲重新加入队列
-            var current = NowPlaying.Value;
             await EnqueueMusic(current.music, current.service, current.enqueuerId);
         }
-        await MusicCut(operatorId, NowPlaying.Value.music);
+        
+        await MusicCut(operatorId, current.music);
         NowPlaying = null; // 强制结束当前播放
     }
 

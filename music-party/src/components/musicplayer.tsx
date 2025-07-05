@@ -68,6 +68,24 @@ export const MusicPlayer = (props: {
     console.log("aaa==="+audio.current.volume);
   }, [props.src, props.playtime]);
 
+  // 添加停止音频的事件监听器
+  useEffect(() => {
+    const handleStopAudio = () => {
+      if (audio.current) {
+        audio.current.pause();
+        audio.current.currentTime = 0;
+        audio.current.src = '';
+        setIsPlaying(false);
+      }
+    };
+
+    window.addEventListener('stopAllAudio', handleStopAudio);
+    
+    return () => {
+      window.removeEventListener('stopAllAudio', handleStopAudio);
+    };
+  }, []);
+
   return (
     <>
       <Flex flexDirection={"row"} alignItems={"center"}>

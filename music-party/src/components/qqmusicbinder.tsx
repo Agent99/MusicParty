@@ -25,8 +25,24 @@ export const QQMusicBinder = (props: {}) => {
 
   return (
     <>
-      <Button ref={btnRef} bg="#16bb5d" color="white" onClick={onOpen}>
-        绑定 QQ 音乐账号
+      <Button 
+        ref={btnRef} 
+        bg="#16bb5d" 
+        color="white" 
+        onClick={onOpen}
+        size="xs"
+        fontSize="xs"
+        px={3}
+        py={2}
+        h="28px"
+        w="full"
+        _hover={{ 
+          bg: "#139b52",
+          transform: 'scale(1.02)'
+        }}
+        transition="all 0.2s"
+      >
+        🎶 绑定QQ音乐
       </Button>
       <Drawer
         isOpen={isOpen}

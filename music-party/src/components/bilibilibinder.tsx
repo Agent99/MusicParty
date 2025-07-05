@@ -29,8 +29,24 @@ export const BilibiliBinder = (props: {}) => {
 
   return (
     <>
-      <Button ref={btnRef} colorScheme='blue' onClick={onOpen}>
-        绑定哔哩哔哩账号
+      <Button 
+        ref={btnRef} 
+        bg="#00a1d6" 
+        color="white"
+        onClick={onOpen}
+        size="xs"
+        fontSize="xs"
+        px={3}
+        py={2}
+        h="28px"
+        w="full"
+        _hover={{ 
+          bg: "#0082b3",
+          transform: 'scale(1.02)'
+        }}
+        transition="all 0.2s"
+      >
+        📺 绑定B站
       </Button>
       <Drawer
         isOpen={isOpen}

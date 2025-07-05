@@ -37,13 +37,12 @@ import {
   VStack,
   HStack,
   Badge,
-  Icon,
   useColorModeValue,
   Divider,
   Avatar,
   AvatarGroup,
 } from '@chakra-ui/react';
-import { FaMusic, FaUsers, FaComments, FaPlay, FaPause, FaForward } from 'react-icons/fa';
+// 使用 Chakra UI 内置图标
 import { MusicPlayer } from '../src/components/musicplayer';
 import { getMusicApis, getProfile } from '../src/api/api';
 import { NeteaseBinder } from '../src/components/neteasebinder';
@@ -128,6 +127,14 @@ export default function Home() {
           setOnlineUsers((u) =>
             u.map((x) => (x.id === id ? { id, name: newName } : x))
           );
+          // 重新获取当前用户信息，以防用户名被更新
+          getProfile()
+            .then((u) => {
+              setUserName(u.name);
+            })
+            .catch((e) => {
+              console.error(e);
+            });
         },
         async (name: string, content: string) => {
           setChatContent((c) => c.concat({ name, content }));
@@ -156,6 +163,8 @@ export default function Home() {
             setQueue(queue);
             const users = await conn.current!.getOnlineUsers();
             setOnlineUsers(users);
+            // 请求当前循环模式状态
+            await conn.current!.requestLoopModeStatus();
           } catch (err: any) {
             toastError(t, err);
           }
@@ -199,32 +208,39 @@ export default function Home() {
         <link rel='icon' href='/favicon.ico' />
         <meta name='referrer' content='never' />
       </Head>
-      
-      <Container maxW="container.xl" p={4}>
+      <Container maxW="container.xl" p={{ base: 2, lg: 4 }}>
         <VStack spacing={6} align="stretch">
           {/* 页面标题 */}
-          <Box textAlign="center" py={6}>
-            <HStack justify="center" spacing={4} mb={4}>
-              <Icon as={FaMusic} w={8} h={8} color="purple.500" />
+          <Box textAlign="center" py={{ base: 4, lg: 6 }}>
+            <HStack justify="center" spacing={{ base: 2, lg: 4 }} mb={4}>
+              <Text fontSize={{ base: '2xl', lg: '4xl' }}>🎵</Text>
               <Heading 
-                size="2xl" 
+                size={{ base: 'xl', lg: '2xl' }} 
                 bgGradient="linear(to-r, purple.500, pink.500, blue.500)"
                 bgClip="text"
                 fontWeight="extrabold"
               >
                 山东油盐社广播音乐台FM
               </Heading>
-              <Icon as={FaMusic} w={8} h={8} color="pink.500" />
+              <Text fontSize={{ base: '2xl', lg: '4xl' }}>🎵</Text>
             </HStack>
-            <Text fontSize="lg" color="gray.600" fontStyle="italic">
+            <Text fontSize={{ base: 'md', lg: 'lg' }} color="gray.600" fontStyle="italic">
               🎶 享受音趴，一起嗨起来！ 🎶
             </Text>
           </Box>
 
-          <Grid templateColumns={{ base: '1fr', lg: '350px 1fr' }} gap={6}>
+          <Grid 
+            templateColumns={{ base: '1fr', lg: '350px 1fr' }} 
+            templateRows={{ base: 'auto auto', lg: '1fr' }}
+            gap={6}
+          >
             {/* 左侧边栏 */}
             <GridItem>
-              <VStack spacing={6} align="stretch">
+              <VStack 
+                spacing={{ base: 4, lg: 6 }} 
+                align="stretch" 
+                h={{ base: 'auto', lg: '800px' }}
+              >
                 {/* 用户信息卡片 */}
                 <Card 
                   bg={cardBg} 
@@ -234,6 +250,9 @@ export default function Home() {
                   borderColor="purple.200"
                   _hover={{ transform: 'translateY(-2px)', shadow: '2xl' }}
                   transition="all 0.2s"
+                  flex="0 0 auto"
+                  h={{ base: 'auto', lg: '246px' }}
+                  minH={{ base: '200px', lg: 'unset' }}
                 >
                   <CardHeader pb={2}>
                     <HStack>
@@ -248,38 +267,48 @@ export default function Home() {
                       </VStack>
                     </HStack>
                   </CardHeader>
-                  <CardBody pt={0}>
-                    <VStack spacing={4} align="stretch">
-                      <Popover>
+                  <CardBody pt={0} overflow="hidden">
+                    <VStack spacing={4} align="stretch" h="full">
+                      <Popover placement="right-start">
                         {({ onClose }) => (
                           <>
                             <PopoverTrigger>
                               <Button 
                                 colorScheme="purple" 
-                                variant="outline"
-                                size="sm"
-                                _hover={{ bg: 'purple.50' }}
+                                variant="ghost"
+                                size="xs"
+                                fontSize="xs"
+                                px={2}
+                                py={1}
+                                h="24px"
+                                _hover={{ 
+                                  bg: 'purple.100',
+                                  transform: 'scale(1.05)'
+                                }}
+                                transition="all 0.2s"
                               >
-                                修改昵称
+                                ✏️ 修改昵称
                               </Button>
                             </PopoverTrigger>
                             <Portal>
-                              <PopoverContent>
+                              <PopoverContent zIndex={9999} maxW="250px">
                                 <PopoverArrow />
-                                <PopoverHeader fontWeight="bold">修改昵称</PopoverHeader>
-                                <PopoverCloseButton />
-                                <PopoverBody>
+                                <PopoverHeader fontWeight="bold" fontSize="sm">修改昵称</PopoverHeader>
+                                <PopoverCloseButton size="sm" />
+                                <PopoverBody py={3}>
                                   <Input
                                     value={newName}
                                     placeholder="输入新昵称"
                                     onChange={(e) => setNewName(e.target.value)}
                                     focusBorderColor="purple.400"
+                                    size="sm"
                                   />
                                 </PopoverBody>
-                                <PopoverFooter>
+                                <PopoverFooter py={2}>
                                   <Button
                                     colorScheme="purple"
                                     size="sm"
+                                    w="full"
                                     onClick={async () => {
                                       if (newName === '') return;
                                       await conn.current!.rename(newName);
@@ -321,10 +350,13 @@ export default function Home() {
                   borderColor="blue.200"
                   _hover={{ transform: 'translateY(-2px)', shadow: '2xl' }}
                   transition="all 0.2s"
+                  flex="0 0 auto"
+                  h={{ base: 'auto', lg: '253px' }}
+                  minH={{ base: '180px', lg: 'unset' }}
                 >
                   <CardHeader pb={2}>
                     <HStack>
-                      <Icon as={FaUsers} color="blue.500" />
+                      <Text fontSize="xl">👥</Text>
                       <Heading size="md" color="blue.600">
                         在线用户
                       </Heading>
@@ -333,8 +365,8 @@ export default function Home() {
                       </Badge>
                     </HStack>
                   </CardHeader>
-                  <CardBody pt={0}>
-                    <VStack spacing={2} align="stretch" maxH="200px" overflowY="auto">
+                  <CardBody pt={0} overflow="hidden">
+                    <VStack spacing={2} align="stretch" h="full" overflowY="auto">
                       {onlineUsers.map((u) => (
                         <HStack key={u.id} p={2} bg="blue.50" borderRadius="md">
                           <Avatar size="xs" name={u.name} bg="blue.400" />
@@ -356,22 +388,28 @@ export default function Home() {
                   borderColor="green.200"
                   _hover={{ transform: 'translateY(-2px)', shadow: '2xl' }}
                   transition="all 0.2s"
+                  flex="0 0 auto"
+                  h={{ base: 'auto', lg: '253px' }}
+                  minH={{ base: '200px', lg: 'unset' }}
                 >
                   <CardHeader pb={2}>
                     <HStack>
-                      <Icon as={FaComments} color="green.500" />
+                      <Text fontSize="xl">💬</Text>
                       <Heading size="md" color="green.600">
                         实时聊天
                       </Heading>
+                      <Badge colorScheme="red" fontSize="xs" ml="auto">
+                        大魔王功能
+                      </Badge>
                     </HStack>
                   </CardHeader>
-                  <CardBody pt={0}>
-                    <VStack spacing={4} align="stretch">
+                  <CardBody pt={0} overflow="hidden">
+                    <VStack spacing={4} align="stretch" h="full">
                       <HStack>
                         <Input
                           flex={1}
                           value={chatToSend}
-                          placeholder="说点什么..."
+                          placeholder="说点什么... (输入 / 查看命令)"
                           onChange={(e) => setChatToSend(e.target.value)}
                           onKeyDown={async (e) => {
                             if (e.key === "Enter") {
@@ -396,12 +434,41 @@ export default function Home() {
                         </Button>
                       </HStack>
                       
+                      {/* 命令提示 */}
+                      {chatToSend.startsWith('/') && (
+                        <Box 
+                          bg="white" 
+                          border="1px solid" 
+                          borderColor="gray.200" 
+                          borderRadius="md" 
+                          p={2}
+                          mt={2}
+                        >
+                          <Text fontSize="sm" fontWeight="bold" mb={2}>可用命令：</Text>
+                          <VStack spacing={1} align="start">
+                            <Text fontSize="xs" color="blue.600" cursor="pointer" 
+                                  onClick={() => setChatToSend('/roll')}>
+                              /roll - 掷骰子 (1-100)
+                            </Text>
+                            <Text fontSize="xs" color="red.600" cursor="pointer" 
+                                  onClick={() => setChatToSend('/kick ass ')}>
+                              /kick ass [用户名] - 踢人 (仅大魔王)
+                            </Text>
+                          </VStack>
+                        </Box>
+                      )}
+                      
                       <Box 
-                        maxH="150px" 
+                        flex="1"
                         overflowY="auto" 
                         bg="green.50" 
                         borderRadius="md" 
                         p={2}
+                        ref={(el) => {
+                          if (el) {
+                            el.scrollTop = el.scrollHeight;
+                          }
+                        }}
                       >
                         <VStack spacing={1} align="stretch">
                           {chatContent.map((s, index) => (
@@ -430,20 +497,15 @@ export default function Home() {
                 borderRadius="xl"
                 border="1px solid"
                 borderColor="purple.200"
-                minH="600px"
+                h={{ base: 'auto', lg: '800px' }}
+                minH={{ base: '600px', lg: 'unset' }}
               >
-                <CardBody p={6}>
-                  <Tabs variant="soft-rounded" colorScheme="purple">
-                    <TabList mb={6} flexWrap="wrap" gap={2}>
+                <CardBody p={{ base: 4, lg: 6 }} h="full" overflow="hidden">
+                  <Tabs variant="soft-rounded" colorScheme="purple" h="full" display="flex" flexDirection="column">
+                    <TabList mb={{ base: 4, lg: 6 }} flexWrap="wrap" gap={2} flexShrink={0}>
                       <Tab _selected={{ bg: 'purple.500', color: 'white' }}>
-                        <Icon as={FaPlay} mr={2} />
+                        <Text as="span" mr={2}>▶️</Text>
                         播放列表
-                      </Tab>
-                      <Tab _selected={{ bg: 'purple.500', color: 'white' }}>
-                        音乐ID点歌
-                      </Tab>
-                      <Tab _selected={{ bg: 'purple.500', color: 'white' }}>
-                        音乐名称点歌
                       </Tab>
                       <Tab _selected={{ bg: 'purple.500', color: 'white' }}>
                         智能搜索点歌
@@ -453,16 +515,17 @@ export default function Home() {
                       </Tab>
                     </TabList>
                     
-                    <TabPanels>
-                      <TabPanel p={0}>
-                        <VStack spacing={6} align="stretch">
+                    <TabPanels flex="1" overflow="hidden">
+                      <TabPanel p={0} h="full" overflow="hidden">
+                        <VStack spacing={{ base: 4, lg: 6 }} align="stretch" h="full">
                           {/* 正在播放区域 */}
                           <Box 
-                            p={6} 
+                            p={{ base: 4, lg: 6 }} 
                             bg="gradient-to-r from-purple-100 to-pink-100" 
                             borderRadius="xl"
                             border="2px solid"
                             borderColor="purple.300"
+                            flexShrink={0}
                           >
                             {nowPlaying ? (
                               <VStack spacing={4} align="stretch">
@@ -490,7 +553,7 @@ export default function Home() {
                               </VStack>
                             ) : (
                               <VStack spacing={4}>
-                                <Icon as={FaMusic} w={12} h={12} color="purple.300" />
+                                <Text fontSize="6xl">🎵</Text>
                                 <Heading size="md" color="purple.600">
                                   暂无歌曲正在播放
                                 </Heading>
@@ -502,72 +565,45 @@ export default function Home() {
                           </Box>
 
                           {/* 音乐播放器 */}
-                          <MusicPlayer
-                            src={src}
-                            playtime={playtime}
-                            nextClick={() => {
-                              conn.current?.nextSong();
-                            }}
-                            reset={() => {
-                              console.log('reset');
-                              conn.current!.requestSetNowPlaying();
-                              conn.current!.getMusicQueue().then((q) => {
-                                setQueue(q);
-                              });
-                            }}
-                          />
+                          <Box flexShrink={0}>
+                            <MusicPlayer
+                              src={src}
+                              playtime={playtime}
+                              nextClick={() => {
+                                conn.current?.nextSong();
+                              }}
+                              reset={() => {
+                                console.log('reset');
+                                conn.current!.requestSetNowPlaying();
+                                conn.current!.getMusicQueue().then((q) => {
+                                  setQueue(q);
+                                });
+                              }}
+                            />
+                          </Box>
 
                           {/* 播放队列 */}
-                          <MusicQueue
-                            queue={queue}
-                            top={(actionId) => {
-                              conn.current!.topSong(actionId);
-                            }}
-                            delete={(actionId) => {
-                              conn.current!.deleteSong(actionId);
-                            }}
-                            loopMode={loopMode}
-                            toggleLoopMode={toggleLoopMode}
-                          />
+                          <Box flex="1" overflow="hidden">
+                            <MusicQueue
+                              queue={queue}
+                              top={(actionId) => {
+                                conn.current!.topSong(actionId);
+                              }}
+                              delete={(actionId) => {
+                                conn.current!.deleteSong(actionId);
+                              }}
+                              loopMode={loopMode}
+                              toggleLoopMode={toggleLoopMode}
+                            />
+                          </Box>
                         </VStack>
                       </TabPanel>
                       
-                      <TabPanel p={0}>
-                        <MusicSelector apis={apis} conn={conn.current!} />
-                      </TabPanel>
-                      
-                      <TabPanel p={0}>
-                        <MusicSelectorByName apis={apis} conn={conn.current!} />
-                      </TabPanel>
-                      
-                      <TabPanel p={0}>
-                        <SongListByName 
-                          apis={apis} 
-                          conn={conn.current!}
-                          enqueue={(id, apiName) => {
-                            conn
-                              .current!.enqueueMusic(id, apiName)
-                              .then(() => {
-                                toastEnqueueOk(t);
-                              })
-                              .catch(() => {
-                                toastError(t, `音乐 {id: ${id}} 加入队列失败`);
-                              });
-                          }}  
-                        />
-                      </TabPanel>
-                      
-                      <TabPanel p={0}>
-                        {!inited ? (
-                          <VStack spacing={4} py={12}>
-                            <Icon as={FaMusic} w={12} h={12} color="purple.300" />
-                            <Text fontSize="lg" color="purple.600">
-                              正在初始化...
-                            </Text>
-                          </VStack>
-                        ) : (
-                          <MyPlaylist
-                            apis={apis}
+                      <TabPanel p={0} h="full" overflow="hidden">
+                        <Box h="full" overflow="auto">
+                          <SongListByName 
+                            apis={apis} 
+                            conn={conn.current!}
                             enqueue={(id, apiName) => {
                               conn
                                 .current!.enqueueMusic(id, apiName)
@@ -577,9 +613,36 @@ export default function Home() {
                                 .catch(() => {
                                   toastError(t, `音乐 {id: ${id}} 加入队列失败`);
                                 });
-                            }}
+                            }}  
                           />
-                        )}
+                        </Box>
+                      </TabPanel>
+                      
+                      <TabPanel p={0} h="full" overflow="hidden">
+                        <Box h="full" overflow="auto">
+                          {!inited ? (
+                            <VStack spacing={4} py={12}>
+                              <Text fontSize="6xl">🎵</Text>
+                              <Text fontSize="lg" color="purple.600">
+                                正在初始化...
+                              </Text>
+                            </VStack>
+                          ) : (
+                            <MyPlaylist
+                              apis={apis}
+                              enqueue={(id, apiName) => {
+                                conn
+                                  .current!.enqueueMusic(id, apiName)
+                                  .then(() => {
+                                    toastEnqueueOk(t);
+                                  })
+                                  .catch(() => {
+                                    toastError(t, `音乐 {id: ${id}} 加入队列失败`);
+                                  });
+                              }}
+                            />
+                          )}
+                        </Box>
                       </TabPanel>
                     </TabPanels>
                   </Tabs>

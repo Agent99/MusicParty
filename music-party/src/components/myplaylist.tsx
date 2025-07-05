@@ -6,6 +6,7 @@ import {
   useToast,
   Flex,
   Select,
+  Box,
 } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import * as api from "../api/api";
@@ -61,51 +62,140 @@ export const MyPlaylist = (props: {
   }, [apiName]);
 
   return (
-    <Stack>
+    <Stack spacing={4}>
       {canshow ? (
         needBind ? (
-          <Text>
-            请绑定你的音乐平台账户后刷新页面
-          </Text>
+          <Box 
+            textAlign="center" 
+            py={12}
+            bg="orange.50"
+            borderRadius="md"
+            border="2px dashed"
+            borderColor="orange.300"
+          >
+            <Text fontSize="6xl" mb={4}>🔗</Text>
+            <Text fontSize="lg" color="orange.700" mb={2} fontWeight="bold">
+              需要绑定音乐平台
+            </Text>
+            <Text fontSize="sm" color="orange.600">
+              请先绑定你的音乐平台账户，然后刷新页面查看歌单
+            </Text>
+          </Box>
         ) : (
           <>
-            <Flex flexDirection={"row"} alignItems={"center"} mb={4}>
-              <Text>选择平台</Text>
-              <Select
-                ml={2}
-                flex={1}
-                onChange={(e) => {
-                  setApiName(e.target.value);
-                }}
-                defaultValue={apiName}
+            {/* 平台选择区域 */}
+            <Box p={4} bg="gray.50" borderRadius="md" border="1px solid" borderColor="gray.200">
+              <Flex flexDirection={"row"} alignItems={"center"}>
+                <Text fontWeight="bold" minW="80px">选择平台</Text>
+                <Select
+                  ml={2}
+                  flex={1}
+                  onChange={(e) => {
+                    setApiName(e.target.value);
+                  }}
+                  defaultValue={apiName}
+                  bg="white"
+                >
+                  {apis.map((a) => {
+                    return <option key={a}>{a}</option>;
+                  })}
+                </Select>
+              </Flex>
+            </Box>
+
+            {/* 歌单统计信息 */}
+            {playlists.length > 0 && (
+              <Box 
+                p={3} 
+                bg="green.50" 
+                borderRadius="md" 
+                border="1px solid" 
+                borderColor="green.200"
               >
-                {apis.map((a) => {
-                  return <option key={a}>{a}</option>;
-                })}
-              </Select>
-            </Flex>
-            <Accordion allowMultiple key={someHook}>
-              {playlists.map((p) => (
-                <Playlist
-                  key={p.id}
-                  id={p.id}
-                  name={p.name}
-                  apiName={apiName}
-                  enqueue={props.enqueue}
-                />
-              ))}
-            </Accordion>
+                <Text fontSize="sm" color="green.700" textAlign="center">
+                  📋 共有 <Text as="span" fontWeight="bold">{playlists.length}</Text> 个歌单可供选择
+                </Text>
+              </Box>
+            )}
+
+            {/* 歌单列表 - 添加固定高度和滚动条 */}
+            <Box 
+              maxH="500px" 
+              overflowY="auto" 
+              border="1px solid" 
+              borderColor="gray.200" 
+              borderRadius="md"
+              bg="white"
+              css={{
+                '&::-webkit-scrollbar': {
+                  width: '6px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: '#f1f1f1',
+                  borderRadius: '10px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: 'linear-gradient(45deg, #9f7aea, #ed64a6)',
+                  borderRadius: '10px',
+                },
+                '&::-webkit-scrollbar-thumb:hover': {
+                  background: 'linear-gradient(45deg, #805ad5, #d53f8c)',
+                },
+              }}
+            >
+              {playlists.length > 0 ? (
+                <Accordion allowMultiple key={someHook}>
+                  {playlists.map((p, index) => (
+                    <Box
+                      key={p.id}
+                      className="queue-item"
+                      _hover={{ bg: 'green.50' }}
+                      transition="all 0.2s"
+                    >
+                      <Playlist
+                        id={p.id}
+                        name={p.name}
+                        apiName={apiName}
+                        enqueue={props.enqueue}
+                      />
+                    </Box>
+                  ))}
+                </Accordion>
+              ) : (
+                <Box 
+                  textAlign="center" 
+                  py={12}
+                  bg="gray.50"
+                  borderRadius="md"
+                  border="2px dashed"
+                  borderColor="gray.300"
+                  m={4}
+                >
+                  <Text fontSize="6xl" mb={4}>📋</Text>
+                  <Text fontSize="lg" color="gray.600" mb={2}>
+                    暂无歌单
+                  </Text>
+                  <Text fontSize="sm" color="gray.500">
+                    请在音乐平台创建歌单后刷新页面
+                  </Text>
+                </Box>
+              )}
+            </Box>
           </>
         )
       ) : (
-        <>
-          <Skeleton height="20px" />
-          <Skeleton height="20px" />
-          <Skeleton height="20px" />
-          <Skeleton height="20px" />
-          <Skeleton height="20px" />
-          <Skeleton height="20px" />
-        </>
+        <Box p={4}>
+          <Text fontSize="lg" color="purple.600" mb={4} textAlign="center">
+            🎵 正在加载歌单...
+          </Text>
+          <Stack spacing={3}>
+            <Skeleton height="60px" borderRadius="md" />
+            <Skeleton height="60px" borderRadius="md" />
+            <Skeleton height="60px" borderRadius="md" />
+            <Skeleton height="60px" borderRadius="md" />
+            <Skeleton height="60px" borderRadius="md" />
+          </Stack>
+        </Box>
       )}
     </Stack>
   );
